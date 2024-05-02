@@ -6,20 +6,30 @@ const mongoose = require('mongoose')
 const axios = require('axios')
 // const todo = require('./src/models/Todo')
 // const user = require('./src/models/User')
+const usersRouter =  require('./src/routes/users')
+const todosRouter = require('./src/routes/todos')
+const config = require('./config')
+const {wrap, asyncFunction} = require('./async')
+
+app.use('/async-function', wrap(asyncFunction))
 
 const corsOptions = {
     origin: 'http://localhost:3000',
     credentials: true
 }
 
-const DB_URL = 'mongodb://localhost:27017/project_practice'
-mongoose.connect(DB_URL)
+mongoose.connect(config.MONGODB_URL)
 .then(() => console.log('데이터베이스 연결 성공'))
 .catch(e => console.log(`데이터베이스 연결 실패: ${e}`))
 
 app.use(cors(corsOptions))
 app.use(express.json())
 app.use(logger('tiny'))
+
+
+
+app.use('/api/users', usersRouter)
+app.use('/api/todos', todosRouter)
 
 
 
