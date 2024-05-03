@@ -20,7 +20,7 @@ const generateToken = (user) => {
 const isAuth = (req, res, next) => {
     const bearerToken = req.headers.authorization
     if(!bearerToken){
-        res.status(401).json({message: 'Token is not supplied'})
+        return res.status(401).json({message: 'Token is not supplied'})
     }else{
         const token = bearerToken.slice(7, bearerToken.length)
         jwt.verify(token, config.JWT_SECRET, (err, userInfo) => {
