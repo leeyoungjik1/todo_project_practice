@@ -9,9 +9,6 @@ const axios = require('axios')
 const usersRouter =  require('./src/routes/users')
 const todosRouter = require('./src/routes/todos')
 const config = require('./config')
-const {wrap, asyncFunction} = require('./async')
-
-app.use('/async-function', wrap(asyncFunction))
 
 const corsOptions = {
     origin: 'http://localhost:3000',
