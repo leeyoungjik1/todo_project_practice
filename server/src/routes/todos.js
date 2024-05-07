@@ -100,10 +100,13 @@ router.get('/group/:field', isAuth, isAdmin, isFieldValid, expressAsyncHandler(a
                 _id: `$${req.params.field}`,
                 count: { $sum: 1 }
             }
+        },
+        { 
+            $sort: {_id: 1}
         }
     ])
     console.log(`Number Of Group: ${docs.length}`)
-    docs.sort((d1, d2) => d1._id - d2._id)
+    // docs.sort((d1, d2) => d1._id - d2._id)
     res.json({code: 200, docs})
 }))
 router.get('/group/mine/:field', isAuth, isFieldValid, expressAsyncHandler(async (req, res, next) => {
@@ -116,10 +119,13 @@ router.get('/group/mine/:field', isAuth, isFieldValid, expressAsyncHandler(async
                 _id: `$${req.params.field}`,
                 count: {$sum: 1}
             }
+        },
+        { 
+            $sort: {_id: 1}
         }
     ])
     console.log(`Number Of Group: ${docs.length}`)
-    docs.sort((d1, d2) => d1._id - d2._id)
+    // docs.sort((d1, d2) => d1._id - d2._id)
     res.json({code: 200, docs})
 }))
 router.get('/group/date/:field', isAuth, isAdmin, expressAsyncHandler(async (req, res, next) => {
@@ -129,14 +135,17 @@ router.get('/group/date/:field', isAuth, isAdmin, expressAsyncHandler(async (req
     ){
         const docs = await Todo.aggregate([
             {
-            $group: {
-                _id: { year: { $year: `$${req.params.field}` }, month: { $month: `$${req.params.field}` } },
-                count: { $sum: 1 }
-            }
+                $group: {
+                    _id: { year: { $year: `$${req.params.field}` }, month: { $month: `$${req.params.field}` } },
+                    count: { $sum: 1 }
+                }
+            },
+            { 
+                $sort: {_id: 1}
             }
         ])
         console.log(`Number Of Group: ${docs.length}`)
-        docs.sort((d1, d2) => d1._id.year - d2._id.year).sort((d1, d2) => d1._id.month - d2._id.month)
+        // docs.sort((d1, d2) => d1._id.year - d2._id.year).sort((d1, d2) => d1._id.month - d2._id.month)
         res.json({code: 200, docs})
     }else{
         res.status(400).json({code: 400, message: 'You gave wrong field to group documents'})
@@ -156,10 +165,13 @@ router.get('/group/mine/date/:field', isAuth, expressAsyncHandler(async (req, re
                     _id: {year: {$year: `$${req.params.field}`}, month: {$month: `$${req.params.field}`}},
                     count: {$sum: 1}
                 }
+            },
+            { 
+                $sort: {_id: 1}
             }
         ])
         console.log(`Number Of Group: ${docs.length}`)
-        docs.sort((d1, d2) => d1._id.year - d2._id.year).sort((d1, d2) => d1._id.month - d2._id.month)
+        // docs.sort((d1, d2) => d1._id.year - d2._id.year).sort((d1, d2) => d1._id.month - d2._id.month)
         res.json({code: 200, docs})
     }else{
         res.status(400).json({code: 400, message: 'You gave wrong field to group documents'})
