@@ -41,9 +41,17 @@ const isAdmin = (req, res, next) => {
         res.status(401).json({code: 401, message: 'You are not valid admin user'})
     }
 }
+const isFieldValid = (req, res, next) => {
+    if(req.params.field === 'category' || req.params.field === 'isDone'){
+        next()
+    }else{
+        res.status(400).json({code: 400, message: 'You gave wrong field to group documents'})
+    }
+}
 
 module.exports = {
     generateToken,
     isAuth,
-    isAdmin
+    isAdmin,
+    isFieldValid
 }

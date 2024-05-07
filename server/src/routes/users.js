@@ -45,8 +45,8 @@ router.post('/login', expressAsyncHandler(async (req, res, next) => {
 router.post('/logout', (req, res, next) => {
     res.json('로그아웃')
 })
-router.put('/:id', isAuth, expressAsyncHandler(async (req, res, next) => {
-    const user = await User.findById(req.params.id)
+router.put('/', isAuth, expressAsyncHandler(async (req, res, next) => {
+    const user = await User.findById(req.user._id)
     if(!user){
         res.status(404).json({code: 404, message: 'User Not Founded'})
     }else{
@@ -64,8 +64,8 @@ router.put('/:id', isAuth, expressAsyncHandler(async (req, res, next) => {
         })
     }
 }))
-router.delete('/:id', isAuth, expressAsyncHandler(async (req, res, next) => {
-    const user = await User.findByIdAndDelete(req.params.id)
+router.delete('/', isAuth, expressAsyncHandler(async (req, res, next) => {
+    const user = await User.findByIdAndDelete(req.user._id)
     if(!user){
         res.status(404).json({code: 404, message: 'User Not Found'})
     }else{
