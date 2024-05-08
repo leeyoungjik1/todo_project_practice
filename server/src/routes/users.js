@@ -2,27 +2,47 @@ const express = require('express')
 const User = require('../models/User')
 const expressAsyncHandler = require('express-async-handler')
 const { generateToken, isAuth } = require('../../auth')
+const { validationResult } = require('express-validator')
+const {
+    validateUserName,
+    validateUserEmail,
+    validateUserPassword
+} = require('../../validator')
 
 const router = express.Router()
 
-router.post('/register', expressAsyncHandler(async (req, res, next) => {
-    // console.log(req.body)
-    const user = new User({
-        name: req.body.name,
-        email: req.body.email,
-        userId: req.body.userId,
-        password: req.body.password
-    })
-    const newUser = await user.save()
-    if(!newUser){
-        res.status(400).json({code: 400, message: 'Invalid User Data'})
-    }else{
-        const { name, email, userId, isAdmin, createdAt } = newUser
-        res.json({
-            code: 200,
-            token: generateToken(newUser),
-            name, email, userId, isAdmin, createdAt
+router.post('/register', [
+    validateUserName(),
+    validateUserEmail(),
+    validateUserPassword()
+], expressAsyncHandler(async (req, res, next) => {
+    const errors = validationResult(req)
+    if(!errors.isEmpty()){
+        console.log(errors.array())
+        res.status(400).json({
+            code: 400,
+            message: 'Invaild Form data for user',
+            error: errors.array()
         })
+    }else{
+        // console.log(req.body)
+        const user = new User({
+            name: req.body.name,
+            email: req.body.email,
+            userId: req.body.userId,
+            password: req.body.password
+        })
+        const newUser = await user.save()
+        if(!newUser){
+            res.status(400).json({code: 400, message: 'Invalid User Data'})
+        }else{
+            const { name, email, userId, isAdmin, createdAt } = newUser
+            res.json({
+                code: 200,
+                token: generateToken(newUser),
+                name, email, userId, isAdmin, createdAt
+            })
+        }
     }
 }))
 router.post('/login', expressAsyncHandler(async (req, res, next) => {
