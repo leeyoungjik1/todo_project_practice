@@ -4,6 +4,12 @@ const expressAsyncHandler = require('express-async-handler')
 const { isAuth, isAdmin, isFieldValid } = require('../../auth')
 const mongoose = require('mongoose')
 const { Types: { ObjectId }} = mongoose
+const {
+    validateTodoTitle,
+    validateTodoDescription,
+    validateTodoCategory
+} = require('../../validator')
+const { validationResult } = require('express-validator')
 
 const router = express.Router()
 
@@ -26,55 +32,83 @@ router.get('/:id', isAuth, expressAsyncHandler(async (req, res, next) => {
         res.json({code: 200, todo})
     }
 }))
-router.post('/', isAuth, expressAsyncHandler(async (req, res, next) => {
-    const searchedTodo = await Todo.findOne({
-        author: req.user._id,
-        title: req.body.title
-    })
-    if(searchedTodo){
-        res.json({code: 204, message: "Todo you want to create already exists in DB"})
-    }else{
-        const todo = new Todo({
-            author: req.user._id,
-            title: req.body.title,
-            description: req.body.description,
-            category: req.body.category,
-            imgUrl: req.body.imgUrl
+router.post('/', [
+    validateTodoTitle(),
+    validateTodoDescription(),
+    validateTodoCategory()
+], isAuth, expressAsyncHandler(async (req, res, next) => {
+    const errors = validationResult(req)
+    if(!errors.isEmpty()){
+        console.log(errors.array())
+        res.status(400).json({ 
+            code: 400, 
+            message: 'Invalid Form data for todo',
+            error: errors.array()
         })
-        const newTodo = await todo.save()
-        if(!newTodo){
-            res.status(401).json({code: 401, message: 'Failed to save todo'})
+    }else{
+        const searchedTodo = await Todo.findOne({
+            author: req.user._id,
+            title: req.body.title
+        })
+        if(searchedTodo){
+            res.json({code: 204, message: "Todo you want to create already exists in DB"})
         }else{
-            res.status(201).json({
-                code: 201,
-                message: 'New Todo Created',
-                newTodo
+            const todo = new Todo({
+                author: req.user._id,
+                title: req.body.title,
+                description: req.body.description,
+                category: req.body.category,
+                imgUrl: req.body.imgUrl
             })
+            const newTodo = await todo.save()
+            if(!newTodo){
+                res.status(401).json({code: 401, message: 'Failed to save todo'})
+            }else{
+                res.status(201).json({
+                    code: 201,
+                    message: 'New Todo Created',
+                    newTodo
+                })
+            }
         }
     }
 }))
-router.put('/:id', isAuth, expressAsyncHandler(async (req, res, next) => {
-    const todo = await Todo.findOne({
-        author: req.user._id,
-        _id: req.params.id
-    })
-    if(!todo){
-        res.status(404).json({code: 404, message: 'Todo Not Found'})
+router.put('/:id', [
+    validateTodoTitle(),
+    validateTodoDescription(),
+    validateTodoCategory()
+], isAuth, expressAsyncHandler(async (req, res, next) => {
+    const errors = validationResult(req)
+    if(!errors.isEmpty()){
+      console.log(errors.array())
+      res.status(400).json({ 
+          code: 400, 
+          message: 'Invalid Form data for todo',
+          error: errors.array()
+      })
     }else{
-        todo.title = req.body.title || todo.title
-        todo.description = req.body.description || todo.description
-        todo.isDone = req.body.isDone || todo.isDone
-        todo.category = req.body.category || todo.category
-        todo.imgUrl = req.body.imgUrl || todo.imgUrl
-        todo.lastModifiedAt = new Date()
-        todo.finishedAt = todo.isDone ? todo.lastModifiedAt : todo.finishedAt
-
-        const updatedTodo = await todo.save()
-        res.json({
-            code: 200,
-            message: 'Todo updated',
-            updatedTodo
+        const todo = await Todo.findOne({
+            author: req.user._id,
+            _id: req.params.id
         })
+        if(!todo){
+            res.status(404).json({code: 404, message: 'Todo Not Found'})
+        }else{
+            todo.title = req.body.title || todo.title
+            todo.description = req.body.description || todo.description
+            todo.isDone = req.body.isDone || todo.isDone
+            todo.category = req.body.category || todo.category
+            todo.imgUrl = req.body.imgUrl || todo.imgUrl
+            todo.lastModifiedAt = new Date()
+            todo.finishedAt = todo.isDone ? todo.lastModifiedAt : todo.finishedAt
+    
+            const updatedTodo = await todo.save()
+            res.json({
+                code: 200,
+                message: 'Todo updated',
+                updatedTodo
+            })
+        }
     }
 }))
 router.delete('/:id', isAuth, expressAsyncHandler(async (req, res, next) => {

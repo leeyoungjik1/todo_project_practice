@@ -63,8 +63,9 @@
 
 
 const BASE_URL = 'http://127.0.0.1:5000'
-const email = 'cmzwmuf@gmail.com'
-const password = 'ojelubmqvy'
+const email = 'sun@gmail.com'
+const password = '1234567890a!'
+const confirmPassword = '1234567890a!'
 const graphType = 'bar'
 const field = 'category'
 
@@ -75,7 +76,7 @@ async function login(email, password){
         },
         method: 'POST',
         body: JSON.stringify({
-            email, password
+            email, password, confirmPassword
         })
     })
     const user = await userJSON.json()
