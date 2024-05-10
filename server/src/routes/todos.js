@@ -10,18 +10,27 @@ const {
     validateTodoCategory
 } = require('../../validator')
 const { validationResult } = require('express-validator')
+const { limitUsage } = require('../../limiter')
 
 const router = express.Router()
 
-router.get('/', isAuth, expressAsyncHandler(async (req, res, next) => {
+router.get('/', limitUsage, isAuth, expressAsyncHandler(async (req, res, next) => {
     const todos = await Todo.find({ author: req.user._id }).populate('author', ['name', 'userId'])
     if(todos.length === 0){
         res.status(404).json({code: 404, message: 'Failed to find todos'})
     }else{
-        res.json({code: 200, todos})
+        res.json({code: 200, todos: todos.map(todo => {
+            return {
+                ...todo._doc,
+                createdAgo: todo.createdAgo,
+                lastModifiedAgo: todo.lastModifiedAgo,
+                finishedAgo: todo.finishedAgo,
+                status: todo.status
+            }
+        })})
     }
 }))
-router.get('/:id', isAuth, expressAsyncHandler(async (req, res, next) => {
+router.get('/:id', limitUsage, isAuth, expressAsyncHandler(async (req, res, next) => {
     const todo = await Todo.findOne({
         author: req.user._id,
         _id: req.params.id
@@ -29,10 +38,16 @@ router.get('/:id', isAuth, expressAsyncHandler(async (req, res, next) => {
     if(!todo){
         res.status(404).json({code: 404, message: 'Todo Not Found'})
     }else{
-        res.json({code: 200, todo})
+        res.json({code: 200, todo: {
+            ...todo._doc,
+            createdAgo: todo.createdAgo,
+            lastModifiedAgo: todo.lastModifiedAgo,
+            finishedAgo: todo.finishedAgo,
+            status: todo.status
+        }})
     }
 }))
-router.post('/', [
+router.post('/', limitUsage, [
     validateTodoTitle(),
     validateTodoDescription(),
     validateTodoCategory()
@@ -73,7 +88,7 @@ router.post('/', [
         }
     }
 }))
-router.put('/:id', [
+router.put('/:id', limitUsage, [
     validateTodoTitle(),
     validateTodoDescription(),
     validateTodoCategory()
@@ -111,7 +126,7 @@ router.put('/:id', [
         }
     }
 }))
-router.delete('/:id', isAuth, expressAsyncHandler(async (req, res, next) => {
+router.delete('/:id', limitUsage, isAuth, expressAsyncHandler(async (req, res, next) => {
     const todo = await Todo.findOne({
         author: req.user._id,
         _id: req.params.id
@@ -127,7 +142,7 @@ router.delete('/:id', isAuth, expressAsyncHandler(async (req, res, next) => {
     }
 }))
 
-router.get('/group/:field', isAuth, isAdmin, isFieldValid, expressAsyncHandler(async (req, res, next) => {
+router.get('/group/:field', limitUsage, isAuth, isAdmin, isFieldValid, expressAsyncHandler(async (req, res, next) => {
     const docs = await Todo.aggregate([
         {
             $group: {
@@ -143,7 +158,7 @@ router.get('/group/:field', isAuth, isAdmin, isFieldValid, expressAsyncHandler(a
     // docs.sort((d1, d2) => d1._id - d2._id)
     res.json({code: 200, docs})
 }))
-router.get('/group/mine/:field', isAuth, isFieldValid, expressAsyncHandler(async (req, res, next) => {
+router.get('/group/mine/:field', limitUsage, isAuth, isFieldValid, expressAsyncHandler(async (req, res, next) => {
     const docs = await Todo.aggregate([
         {
             $match: {author: new ObjectId(req.user._id)}
@@ -162,7 +177,7 @@ router.get('/group/mine/:field', isAuth, isFieldValid, expressAsyncHandler(async
     // docs.sort((d1, d2) => d1._id - d2._id)
     res.json({code: 200, docs})
 }))
-router.get('/group/date/:field', isAuth, isAdmin, expressAsyncHandler(async (req, res, next) => {
+router.get('/group/date/:field', limitUsage, isAuth, isAdmin, expressAsyncHandler(async (req, res, next) => {
     if(req.params.field === 'createdAt' ||
         req.params.field === 'lastModifiedAt' ||
         req.params.field === 'finishedAt'
@@ -185,7 +200,7 @@ router.get('/group/date/:field', isAuth, isAdmin, expressAsyncHandler(async (req
         res.status(400).json({code: 400, message: 'You gave wrong field to group documents'})
     }
 }))
-router.get('/group/mine/date/:field', isAuth, expressAsyncHandler(async (req, res, next) => {
+router.get('/group/mine/date/:field', limitUsage, isAuth, expressAsyncHandler(async (req, res, next) => {
         if(req.params.field === 'createdAt' ||
         req.params.field === 'lastModifiedAt' ||
         req.params.field === 'finishedAt'

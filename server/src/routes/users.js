@@ -8,10 +8,11 @@ const {
     validateUserEmail,
     validateUserPassword
 } = require('../../validator')
+const { limitUsage } = require('../../limiter')
 
 const router = express.Router()
 
-router.post('/register', [
+router.post('/register', limitUsage, [
     validateUserName(),
     validateUserEmail(),
     validateUserPassword()
@@ -32,13 +33,14 @@ router.post('/register', [
             userId: req.body.userId,
             password: req.body.password
         })
-        const newUser = await user.save()
+        user.save()
         .then(() => {
-            const { name, email, userId, isAdmin, createdAt } = newUser
+            const { name, email, userId, isAdmin, createdAt, status, createdAgo, lastModifiedAgo} = user
             res.json({
                 code: 200,
-                token: generateToken(newUser),
-                name, email, userId, isAdmin, createdAt
+                token: generateToken(user),
+                name, email, userId, isAdmin, createdAt,
+                status, createdAgo, lastModifiedAgo
             })
         })
         .catch(e => {
@@ -49,7 +51,7 @@ router.post('/register', [
         })
     }
 }))
-router.post('/login', [
+router.post('/login', limitUsage, [
     validateUserEmail(),
     validateUserPassword()
 ], expressAsyncHandler(async (req, res, next) => {
@@ -70,11 +72,12 @@ router.post('/login', [
         if(!loginUser){
             res.status(401).json({code: 401, message: 'Invalid Email or Invalid Password'})
         }else{
-            const { name, email, userId, isAdmin, createdAt } = loginUser
+            const { name, email, userId, isAdmin, createdAt, status, createdAgo, lastModifiedAgo } = loginUser
             res.json({
                 code: 200,
                 token: generateToken(loginUser),
-                name, email, userId, isAdmin, createdAt
+                name, email, userId, isAdmin, createdAt,
+                status, createdAgo, lastModifiedAgo
             })
         }
     }
@@ -82,7 +85,7 @@ router.post('/login', [
 router.post('/logout', (req, res, next) => {
     res.json('로그아웃')
 })
-router.put('/', oneOf([
+router.put('/', limitUsage, oneOf([
     validateUserName(),
     validateUserEmail(),
     validateUserPassword()
@@ -109,16 +112,17 @@ router.put('/', oneOf([
             user.lastModifiedAt = new Date()
     
             const updatedUser = await user.save()
-            const { name, email, userId, isAdmin, createdAt } = updatedUser
+            const { name, email, userId, isAdmin, createdAt, status, createdAgo, lastModifiedAgo } = updatedUser
             res.json({
                 code: 200,
                 token: generateToken(updatedUser),
-                name, email, userId, isAdmin, createdAt
+                name, email, userId, isAdmin, createdAt,
+                status, createdAgo, lastModifiedAgo
             })
         }
     }
 }))
-router.delete('/', isAuth, expressAsyncHandler(async (req, res, next) => {
+router.delete('/', limitUsage, isAuth, expressAsyncHandler(async (req, res, next) => {
     const user = await User.findByIdAndDelete(req.user._id)
     if(!user){
         res.status(404).json({code: 404, message: 'User Not Found'})
